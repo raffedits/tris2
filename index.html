@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEON TRIS - Pro Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blu-neon: #00d2ff;
+            --rosso-neon: #ff0055;
+            --sfondo-dark: #0a0b10;
+            --testo-chiaro: #e0e0e0;
+            --shadow-blu: 0 0 20px rgba(0, 210, 255, 0.7);
+            --shadow-rosso: 0 0 20px rgba(255, 0, 85, 0.7);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Rajdhani', sans-serif;
+            background-color: var(--sfondo-dark);
+            color: var(--testo-chiaro);
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Sfondo con gradiente */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+            z-index: -1;
+        }
+
+        /* --- SCHERMATE --- */
+        .screen {
+            position: absolute;
+            width: 100%;
+            max-width: 600px; /* Evita dispersioni su schermi giganti */
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center; /* Forza la centratura del testo */
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .screen.active {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Titoli Principali */
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            margin: 0 0 1.5rem 0;
+            text-transform: uppercase;
+            letter-spacing: 2px; /* Ridotto per migliorare la centratura visiva */
+            color: var(--testo-chiaro);
+            width: 100%;
+            text-align: center;
+        }
+
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 400;
+            letter-spacing: 1px;
+            margin-bottom: 2rem;
+            color: #aaa;
+            width: 100%;
+        }
+
+        /* --- BOTTONI --- */
+        .btn-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 15px 35px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: transparent;
+            color: var(--blu-neon);
+            border: 2px solid var(--blu-neon);
+            cursor: pointer;
+            transition: 0.3s;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+            min-width: 180px;
+        }
+
+        .btn:hover {
+            background: var(--blu-neon);
+            color: #000;
+            box-shadow: var(--shadow-blu);
+            transform: translateY(-3px);
+        }
+
+        .btn-red {
+            color: var(--rosso-neon);
+            border-color: var(--rosso-neon);
+        }
+
+        .btn-red:hover {
+            background: var(--rosso-neon);
+            box-shadow: var(--shadow-rosso);
+        }
+
+        /* --- GRIGLIA --- */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 15px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .cell:hover { background: rgba(255, 255, 255, 0.07); }
+        .cell.x { color: var(--blu-neon); text-shadow: var(--shadow-blu); }
+        .cell.o { color: var(--rosso-neon); text-shadow: var(--shadow-rosso); }
+
+        /* --- INFO TURNO --- */
+        #turn-indicator {
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 25px;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        @media (max-width: 400px) {
+            .board {
+                grid-template-columns: repeat(3, 85px);
+                grid-template-rows: repeat(3, 85px);
+            }
+            .cell { width: 85px; height: 85px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="menu-screen" class="screen active">
+        <h1>TRIS</h1>
+        <button class="btn" onclick="showScreen('mode-screen')">START</button>
+    </div>
+
+    <div id="mode-screen" class="screen">
+        <h2>MODALITÀ DI GIOCO</h2>
+        <div class="btn-container">
+            <button class="btn" onclick="startGame(false)">Gioca in due</button>
+            <button class="btn btn-red" onclick="startGame(true)">Contro il Bot</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div id="turn-indicator">TURNO DI: <span id="current-player-name">BLU</span></div>
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+    </div>
+
+    <div id="win-screen" class="screen">
+        <h1 id="win-text">IL BLU HA VINTO</h1>
+        <div class="btn-container">
+            <button class="btn" onclick="resetGame()">RESTART</button>
+            <button class="btn btn-red" onclick="showScreen('menu-screen')">MENU</button>
+        </div>
+    </div>
+
+    <script>
+        let boardState = Array(9).fill("");
+        let currentPlayer = "X"; 
+        let isBotMode = false;
+        let gameActive = true;
+
+        const cells = document.querySelectorAll('.cell');
+        const playerDisplay = document.getElementById('current-player-name');
+        const winText = document.getElementById('win-text');
+        const winScreen = document.getElementById('win-screen');
+
+        const winConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => {
+                s.classList.remove('active');
+                setTimeout(() => { if(!s.classList.contains('active')) s.style.display = 'none'; }, 400);
+            });
+            const target = document.getElementById(screenId);
+            target.style.display = 'flex';
+            setTimeout(() => target.classList.add('active'), 50);
+        }
+
+        function startGame(vsBot) {
+            isBotMode = vsBot;
+            resetGameLogic();
+            showScreen('game-screen');
+        }
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => {
+                const index = cell.getAttribute('data-index');
+                if (boardState[index] !== "" || !gameActive) return;
+                executeMove(index);
+                if (gameActive && isBotMode && currentPlayer === "O") {
+                    setTimeout(botAI, 600);
+                }
+            });
+        });
+
+        function executeMove(index) {
+            boardState[index] = currentPlayer;
+            cells[index].innerText = currentPlayer;
+            cells[index].classList.add(currentPlayer.toLowerCase());
+
+            if (checkWinner()) {
+                endGame(false);
+            } else if (boardState.every(c => c !== "")) {
+                endGame(true);
+            } else {
+                currentPlayer = currentPlayer === "X" ? "O" : "X";
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            playerDisplay.innerText = currentPlayer === "X" ? "BLU" : "ROSSO";
+            playerDisplay.style.color = currentPlayer === "X" ? "var(--blu-neon)" : "var(--rosso-neon)";
+            playerDisplay.style.textShadow = currentPlayer === "X" ? "var(--shadow-blu)" : "var(--shadow-rosso)";
+        }
+
+        function botAI() {
+            if (!gameActive) return;
+            const emptyCells = boardState.map((v, i) => v === "" ? i : null).filter(v => v !== null);
+            let move = -1;
+            for(let i of emptyCells) {
+                boardState[i] = "O"; if(checkWinner()){ move = i; } boardState[i] = "";
+                if(move !== -1) break;
+            }
+            if(move === -1) {
+                for(let i of emptyCells) {
+                    boardState[i] = "X"; if(checkWinner()){ move = i; } boardState[i] = "";
+                    if(move !== -1) break;
+                }
+            }
+            if(move === -1) move = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            executeMove(move);
+        }
+
+        function checkWinner() {
+            return winConditions.some(comb => {
+                return comb.every(idx => boardState[idx] === currentPlayer);
+            });
+        }
+
+        function endGame(draw) {
+            gameActive = false;
+            if (draw) {
+                winText.innerText = "NESSUNO HA VINTO";
+                winText.style.color = "#fff";
+                winText.style.textShadow = "0 0 10px rgba(255,255,255,0.5)";
+            } else {
+                const winnerName = currentPlayer === "X" ? "IL BLU" : "IL ROSSO";
+                winText.innerText = `${winnerName} HA VINTO`;
+                winText.style.color = currentPlayer === "X" ? "var(--blu-neon)" : "var(--rosso-neon)";
+                winText.style.textShadow = currentPlayer === "X" ? "var(--shadow-blu)" : "var(--shadow-rosso)";
+            }
+            setTimeout(() => showScreen('win-screen'), 500);
+        }
+
+        function resetGameLogic() {
+            boardState = Array(9).fill("");
+            currentPlayer = "X";
+            gameActive = true;
+            cells.forEach(cell => {
+                cell.innerText = "";
+                cell.classList.remove('x', 'o');
+            });
+            updateUI();
+        }
+
+        function resetGame() {
+            resetGameLogic();
+            showScreen('game-screen');
+        }
+    </script>
+</body>
+</html>
